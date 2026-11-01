@@ -1,0 +1,15 @@
+# Virtuele omgeving en Python-cache
+.venv/
+__pycache__/
+*.pyc
+
+# Lokale data: wordt opnieuw aangemaakt door seed.py en de app
+pipeline.db
+uploads/
+
+# PyCharm en macOS
+.idea/
+.DS_Store
+
+# De opdracht zelf
+Sales Pipeline - Intern Development Assignment Jannes.pdf

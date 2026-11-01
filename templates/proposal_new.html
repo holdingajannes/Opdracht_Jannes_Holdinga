@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Nieuwe aanvraag{% endblock %}
+{% block content %}
+<style>
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    .check input { width: auto; margin-right: 6px; }
+    .check label { font-weight: normal; }
+    fieldset { border: 1px solid #ddd; border-radius: 6px; margin-top: 20px; padding: 12px 16px 16px; }
+    legend { font-weight: 700; }
+</style>
+
+<h1>Nieuwe aanvraag</h1>
+<p>Alle velden met een kraanspecificatie zijn verplicht, zodat de verkoopingenieur direct een offerte kan maken.</p>
+
+<form method="post">
+    <fieldset>
+        <legend>Kraan en takel</legend>
+        <div class="grid">
+            <div>
+                <label>Kraantype</label>
+                <select name="crane_type" required>
+                    <option value="">Kies...</option>
+                    {% for key, label in CRANE_TYPES.items() %}
+                    <option value="{{ key }}" {% if form.get('crane_type') == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Bedrijfsklasse (FEM)</label>
+                <select name="duty_class" required>
+                    <option value="">Kies...</option>
+                    {% for c in DUTY_CLASSES %}
+                    <option value="{{ c }}" {% if form.get('duty_class') == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <label>Takelspecificatie (bijv. hijslast en type takel)</label>
+        <input name="hoist_spec" value="{{ form.get('hoist_spec', '') }}" required>
+    </fieldset>
+
+    <fieldset>
+        <legend>Snelheden (m/min)</legend>
+        <div class="grid">
+            <div><label>Hijssnelheid</label>
+                <input type="number" step="any" min="0" name="hoist_speed" value="{{ form.get('hoist_speed', '') }}" required></div>
+            <div><label>Katsnelheid</label>
+                <input type="number" step="any" min="0" name="trolley_speed" value="{{ form.get('trolley_speed', '') }}" required></div>
+            <div><label>Kraanrijsnelheid</label>
+                <input type="number" step="any" min="0" name="travel_speed" value="{{ form.get('travel_speed', '') }}" required></div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Afmetingen</legend>
+        <div class="grid">
+            <div><label>Kraanbaan (lengte of omschrijving)</label>
+                <input name="runway" value="{{ form.get('runway', '') }}" required></div>
+            <div><label>Overspanning (m)</label>
+                <input type="number" step="any" min="0" name="span" value="{{ form.get('span', '') }}" required></div>
+            <div><label>Hijshoogte (m)</label>
+                <input type="number" step="any" min="0" name="lift_height" value="{{ form.get('lift_height', '') }}" required></div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Voeding en besturing</legend>
+        <div class="grid">
+            <div>
+                <label>Voeding</label>
+                <select name="power_supply" required>
+                    <option value="">Kies...</option>
+                    {% for p in POWER_SUPPLIES %}
+                    <option value="{{ p }}" {% if form.get('power_supply') == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Besturing</label>
+                <select name="control_method" required>
+                    <option value="">Kies...</option>
+                    {% for key, label in CONTROL_METHODS.items() %}
+                    <option value="{{ key }}" {% if form.get('control_method') == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Omgeving</legend>
+        <label>Locatie</label>
+        <select name="environment" required>
+            <option value="">Kies...</option>
+            <option value="indoor" {% if form.get('environment') == 'indoor' %}selected{% endif %}>Binnen</option>
+            <option value="outdoor" {% if form.get('environment') == 'outdoor' %}selected{% endif %}>Buiten</option>
+        </select>
+        <div class="check">
+            <label><input type="checkbox" name="harsh_environment" {% if form.get('harsh_environment') %}checked{% endif %}>
+                Zware omstandigheden (stof, hitte, corrosie)</label>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Opties</legend>
+        <div class="check">
+            {% for key, label in OPTIONS.items() %}
+            <label><input type="checkbox" name="options" value="{{ key }}"
+                {% if form.getlist and key in form.getlist('options') %}checked{% endif %}>{{ label }}</label>
+            {% endfor %}
+        </div>
+    </fieldset>
+
+    <button type="submit">Aanvraag indienen</button>
+</form>
+{% endblock %}

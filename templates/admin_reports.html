@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Rapportages{% endblock %}
+{% block content %}
+<style>
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0 24px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+    .card .value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+    .card .sub { color: #666; font-size: 0.9em; margin-top: 4px; }
+</style>
+
+<h1>Rapportages</h1>
+
+<div class="cards">
+    <div class="card">
+        <div>Conversieratio</div>
+        <div class="value">{{ "%.0f%%"|format(conversion) if conversion is not none else "geen data" }}</div>
+        <div class="sub">{{ won }} goedgekeurd, {{ lost }} afgewezen</div>
+    </div>
+    <div class="card">
+        <div>Gem. tijd tot offerte</div>
+        <div class="value">{{ avg_to_quote|duration }}</div>
+        <div class="sub">van aanvraag tot eerste offerte</div>
+    </div>
+    <div class="card">
+        <div>Gem. reactietijd klant</div>
+        <div class="value">{{ avg_to_decision|duration }}</div>
+        <div class="sub">van offerte tot beslissing</div>
+    </div>
+    <div class="card">
+        <div>Totaal aanvragen</div>
+        <div class="value">{{ total }}</div>
+    </div>
+</div>
+
+<h2>Werkvoorraad per verkoopingenieur</h2>
+<table>
+    <tr><th>Verkoopingenieur</th><th>Offerte wacht op klant</th><th>Wacht op offerte</th></tr>
+    {% for r in per_engineer %}
+    <tr><td>{{ r["name"] }}</td><td>{{ r["open_quotes"] }}</td><td>{{ r["to_do"] }}</td></tr>
+    {% endfor %}
+</table>
+
+<h2>Aanvragen per status</h2>
+<p>Laat zien waar aanvragen in het proces blijven hangen.</p>
+<table>
+    <tr><th>Status</th><th>Aantal</th></tr>
+    {% for s in status_counts %}
+    <tr><td>{{ STATUS_LABELS[s["status"]] }}</td><td>{{ s["n"] }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

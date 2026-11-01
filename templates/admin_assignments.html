@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Koppelingen{% endblock %}
+{% block content %}
+<style>
+    td input[type=checkbox] { width: auto; transform: scale(1.3); }
+    th, td { text-align: center; }
+    th:first-child, td:first-child { text-align: left; }
+</style>
+
+<h1>Verkoopingenieurs koppelen</h1>
+<p>Vink aan welke verkoopingenieur verantwoordelijk is voor welk bedrijf.
+Een verkoopingenieur ziet alleen de aanvragen van de bedrijven die hier aangevinkt zijn.</p>
+
+<form method="post">
+    <table>
+        <tr>
+            <th>Verkoopingenieur</th>
+            {% for c in companies %}<th>{{ c["name"] }}</th>{% endfor %}
+        </tr>
+        {% for e in engineers %}
+        <tr>
+            <td>{{ e["name"] }}<br><small>{{ e["email"] }}</small></td>
+            {% for c in companies %}
+            <td><input type="checkbox" name="a_{{ e['id'] }}_{{ c['id'] }}"
+                       {% if (e['id'], c['id']) in current %}checked{% endif %}></td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <button type="submit">Opslaan</button>
+</form>
+{% endblock %}

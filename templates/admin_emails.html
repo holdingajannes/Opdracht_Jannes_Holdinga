@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}E-mails{% endblock %}
+{% block content %}
+<style>
+    pre { white-space: pre-wrap; background: #f7f8fa; padding: 10px; border-radius: 4px; font-family: inherit; }
+    .note { color: #555; }
+</style>
+
+<h1>Verzonden e-mails</h1>
+<p class="note">In dit prototype worden e-mails niet echt verstuurd, maar hier vastgelegd.
+In productie gaat dezelfde inhoud via een mailserver naar de ontvanger.</p>
+
+<form method="post" action="{{ url_for('run_reminders') }}">
+    <button>Herinneringen nu controleren</button>
+</form>
+
+<h2>Outbox</h2>
+{% if emails %}
+<table>
+    <tr><th>Tijd</th><th>Aan</th><th>Onderwerp</th><th>Type</th></tr>
+    {% for m in emails %}
+    <tr>
+        <td>{{ m["created_at"]|localtime }}</td>
+        <td>{{ m["to_email"] }}</td>
+        <td>
+            <details>
+                <summary>{{ m["subject"] }}</summary>
+                <pre>{{ m["body"] }}</pre>
+            </details>
+        </td>
+        <td>{{ m["kind"] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>Er zijn nog geen e-mails verstuurd.</p>
+{% endif %}
+{% endblock %}

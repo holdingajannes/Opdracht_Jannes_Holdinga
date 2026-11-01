@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Aanvraag #{{ proposal["id"] }}{% endblock %}
+{% block content %}
+<style>
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    .box { border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-top: 12px; }
+    .order { background: #e8f5e9; border-color: #a5d6a7; }
+    .btn-warn { background: #b7791f; }
+    .btn-danger { background: #b42318; }
+    .btn-ok { background: #2e7d32; }
+    .comment { border-left: 3px solid #1f2a44; padding: 6px 12px; margin: 10px 0; background: #f7f8fa; }
+    .comment small { color: #666; }
+    details { margin-top: 12px; }
+</style>
+
+<p><a href="{{ url_for('home') }}">Terug naar overzicht</a></p>
+<h1>Aanvraag #{{ proposal["id"] }}</h1>
+<p><strong>Status:</strong> {{ STATUS_LABELS[proposal["status"]] }}
+   &nbsp; <strong>Bedrijf:</strong> {{ proposal["company_name"] }}
+   &nbsp; <strong>Ingediend:</strong> {{ proposal["created_at"]|localtime }}</p>
+
+{% if order %}
+<div class="box order">
+    <strong>Order {{ order["order_number"] }}</strong> bevestigd op {{ order["created_at"]|localtime }},
+    {{ order["currency"] }} {{ "{:,.2f}".format(order["price"]) }}.
+</div>
+{% endif %}
+
+{% if g.user["role"] == "sales_engineer" and proposal["status"] == "approved" %}
+<div class="box">
+    <p>De klant heeft de offerte goedgekeurd.</p>
+    <form method="post" action="{{ url_for('create_order', proposal_id=proposal['id']) }}">
+        <button class="btn-ok">Omzetten naar order</button>
+    </form>
+</div>
+{% endif %}
+
+<h2>Specificaties</h2>
+<table>
+    <tr><th>Kraantype</th><td>{{ CRANE_TYPES[proposal["crane_type"]] }}</td></tr>
+    <tr><th>Takel</th><td>{{ proposal["hoist_spec"] }}</td></tr>
+    <tr><th>Bedrijfsklasse</th><td>{{ proposal["duty_class"] }}</td></tr>
+    <tr><th>Snelheden (hijs / kat / kraan)</th>
+        <td>{{ proposal["hoist_speed"] }} / {{ proposal["trolley_speed"] }} / {{ proposal["travel_speed"] }} m/min</td></tr>
+    <tr><th>Kraanbaan</th><td>{{ proposal["runway"] }}</td></tr>
+    <tr><th>Overspanning</th><td>{{ proposal["span"] }} m</td></tr>
+    <tr><th>Hijshoogte</th><td>{{ proposal["lift_height"] }} m</td></tr>
+    <tr><th>Voeding</th><td>{{ proposal["power_supply"] }}</td></tr>
+    <tr><th>Besturing</th><td>{{ CONTROL_METHODS[proposal["control_method"]] }}</td></tr>
+    <tr><th>Omgeving</th>
+        <td>{{ "Binnen" if proposal["environment"] == "indoor" else "Buiten" }}
+            {% if proposal["harsh_environment"] %}, zware omstandigheden{% endif %}</td></tr>
+    <tr><th>Opties</th>
+        <td>{% if proposal["options"] %}
+            {% for o in proposal["options"].split(",") %}{{ OPTIONS[o] }}{% if not loop.last %}, {% endif %}{% endfor %}
+            {% else %}Geen{% endif %}</td></tr>
+</table>
+
+<h2>Offerte</h2>
+{% if quotations %}
+    {% set q = quotations[0] %}
+    <table>
+        <tr><th>Versie</th><td>{{ q["version"] }}</td></tr>
+        <tr><th>Referentie</th><td>{{ q["reference"] }}</td></tr>
+        <tr><th>Prijs</th><td>{{ q["currency"] }} {{ "{:,.2f}".format(q["price"]) }}</td></tr>
+        <tr><th>Levertijd</th><td>{{ q["delivery_time"] }}</td></tr>
+        <tr><th>Geldig tot</th><td>{{ q["valid_until"] }}</td></tr>
+        <tr><th>Geplaatst</th><td>{{ q["created_at"]|localtime }}</td></tr>
+        <tr><th>Offerte-PDF</th><td><a href="{{ url_for('quotation_pdf', quotation_id=q['id']) }}" target="_blank">Openen</a></td></tr>
+        <tr><th>Bijlagen</th><td>
+            {% for a in attachments.get(q["id"], []) %}
+                <a href="{{ url_for('attachment_file', attachment_id=a['id']) }}">{{ a["description"] }}</a><br>
+            {% else %}Geen{% endfor %}
+        </td></tr>
+    </table>
+
+    {% if quotations|length > 1 %}
+    <details>
+        <summary>Eerdere versies ({{ quotations|length - 1 }})</summary>
+        <table>
+            {% for old in quotations[1:] %}
+            <tr>
+                <td>Versie {{ old["version"] }}</td>
+                <td>{{ old["currency"] }} {{ "{:,.2f}".format(old["price"]) }}</td>
+                <td>{{ old["created_at"]|localtime }}</td>
+                <td><a href="{{ url_for('quotation_pdf', quotation_id=old['id']) }}" target="_blank">PDF</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </details>
+    {% endif %}
+{% else %}
+    <p>Er is nog geen offerte.</p>
+{% endif %}
+
+{% if g.user["role"] == "client" and proposal["status"] == "quotation_sent" %}
+<div class="box">
+    <h3>Jouw beslissing</h3>
+    <form method="post" action="{{ url_for('decide', proposal_id=proposal['id']) }}">
+        <label>Reden of toelichting (verplicht bij afwijzen of wijzigingen vragen)</label>
+        <textarea name="reason" rows="3"></textarea>
+        <button name="action" value="approve">Goedkeuren</button>
+        <button name="action" value="changes" class="btn-warn">Wijzigingen vragen</button>
+        <button name="action" value="reject" class="btn-danger">Afwijzen</button>
+    </form>
+</div>
+{% endif %}
+
+{% if g.user["role"] == "sales_engineer" and proposal["status"] not in ["approved", "order_created"] %}
+<div class="box">
+    <h3>{{ "Nieuwe versie uploaden" if quotations else "Offerte uploaden" }}</h3>
+    <form method="post" enctype="multipart/form-data"
+          action="{{ url_for('upload_quotation', proposal_id=proposal['id']) }}">
+        <div class="grid">
+            <div><label>Referentie</label><input name="reference" required></div>
+            <div><label>Prijs</label><input type="number" step="0.01" min="0" name="price" required></div>
+            <div><label>Valuta</label>
+                <select name="currency" required>
+                    {% for c in CURRENCIES %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                </select></div>
+            <div><label>Levertijd</label><input name="delivery_time" placeholder="bijv. 12 weken" required></div>
+            <div><label>Geldig tot</label><input type="date" name="valid_until" required></div>
+        </div>
+        <label>Offerte-PDF</label>
+        <input type="file" name="pdf" accept=".pdf" required>
+        <label>Bijlagen (tekeningen, liggerdocumenten, optioneel)</label>
+        <input type="file" name="attachments" multiple>
+        <button type="submit">Uploaden</button>
+    </form>
+</div>
+{% endif %}
+
+<h2>Opmerkingen</h2>
+{% for c in comments %}
+    <div class="comment">
+        <small>{{ c["user_name"] }} ({{ "klant" if c["user_role"] == "client" else "verkoop" }}),
+               {{ c["created_at"]|localtime }}</small>
+        <div>{{ c["text"] }}</div>
+    </div>
+{% else %}
+    <p>Nog geen opmerkingen.</p>
+{% endfor %}
+
+{% if g.user["role"] in ["client", "sales_engineer"] %}
+<form method="post" action="{{ url_for('add_comment', proposal_id=proposal['id']) }}">
+    <textarea name="text" rows="2" placeholder="Schrijf een opmerking..." required></textarea>
+    <button type="submit">Plaatsen</button>
+</form>
+{% endif %}
+
+<h2>Geschiedenis</h2>
+<table>
+    {% for e in events %}
+    <tr><td>{{ e["created_at"]|localtime }}</td><td>{{ e["user_name"] or "Systeem" }}</td><td>{{ e["details"] }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

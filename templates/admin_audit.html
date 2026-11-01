@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Audit{% endblock %}
+{% block content %}
+<h1>Auditoverzicht</h1>
+<p>Alle acties op alle aanvragen, nieuwste eerst.</p>
+
+<table>
+    <tr><th>Tijd</th><th>Aanvraag</th><th>Bedrijf</th><th>Door</th><th>Actie</th></tr>
+    {% for e in events %}
+    <tr>
+        <td>{{ e["created_at"]|localtime }}</td>
+        <td><a href="{{ url_for('proposal_detail', proposal_id=e['proposal_id']) }}">#{{ e["proposal_id"] }}</a></td>
+        <td>{{ e["company_name"] }}</td>
+        <td>{{ e["user_name"] or "Systeem" }}</td>
+        <td>{{ e["details"] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

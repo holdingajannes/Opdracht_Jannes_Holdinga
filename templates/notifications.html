@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Mijn meldingen{% endblock %}
+{% block content %}
+<style>
+    pre { white-space: pre-wrap; background: #f7f8fa; padding: 10px; border-radius: 4px; font-family: inherit; }
+</style>
+
+<h1>Mijn meldingen</h1>
+<p>De e-mails die naar {{ g.user["email"] }} zijn verstuurd.</p>
+
+{% if emails %}
+<table>
+    <tr><th>Tijd</th><th>Onderwerp</th></tr>
+    {% for m in emails %}
+    <tr>
+        <td>{{ m["created_at"]|localtime }}</td>
+        <td>
+            <details>
+                <summary>{{ m["subject"] }}</summary>
+                <pre>{{ m["body"] }}</pre>
+                {% if m["proposal_id"] %}
+                    <a href="{{ url_for('proposal_detail', proposal_id=m['proposal_id']) }}">Naar aanvraag #{{ m["proposal_id"] }}</a>
+                {% endif %}
+            </details>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+    <p>Je hebt nog geen meldingen.</p>
+{% endif %}
+{% endblock %}
